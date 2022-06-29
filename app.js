@@ -7,6 +7,13 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const nodeMailer = require('nodemailer');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
+const httpsOptions = {
+    key: fs.readFileSync(path.join(__dirname, 'config/key.pem')),
+    cert: fs.readFileSync(path.join(__dirname, 'config/cert.pem'))
+};
 
 const app = express();
 app.use(cors());
@@ -89,8 +96,8 @@ app.get('/authenticate_user', (req, res) => {
                 Create a session_id and associate with the sub of the user
             */
             const session_id = 'kiacbka';
-            res.cookie('session_id', session_id);
-            res.cookie('sub', user_info.sub);
+            res.cookie('session_id', session_id, {httpOnly: true, secure: true});
+            res.cookie('sub', user_info.sub, {httpOnly: true, secure: true});
             
             res.redirect('/welcome');
             res.status(200).end();
@@ -120,6 +127,6 @@ app.use((err, req, res, next) => {
     res.status(err.status || 500).send(err.message || 'Internal Server Error');
 });
 
-const server = app.listen(PORT, function(){
-    console.log('Server listening on port ' + PORT);
+https.createServer(httpsOptions, app).listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
